@@ -1,0 +1,23 @@
+{
+  "name": "invoice-generator",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "protect": "staticrypt dist/index.html --short -d dist",
+    "deploy": "npm run build && npm run protect && gh-pages -d dist"
+  },
+  "dependencies": {
+    "jspdf": "^2.5.2",
+    "jspdf-autotable": "^5.0.7"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "gh-pages": "^6.3.0",
+    "staticrypt": "^3.5.4",
+    "typescript": "^5.0.0",
+    "vite": "^6.3.5"
+  }
+}
