@@ -28,7 +28,7 @@ function headers(pat: string) {
   };
 }
 
-/** Fetch JSON content from a Gist. Returns null on failure. */
+/** Fetch JSON content from a Gist. Returns null on failure.fetch*/
 export async function fetchGist(config: SyncConfig): Promise<string | null> {
   if (!config.pat || !config.gistId) return null;
   try {
