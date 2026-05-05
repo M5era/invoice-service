@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rechnungsgenerator</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 14px;
+      color: #1a1a1a;
+      background: #f5f5f5;
+      min-height: 100vh;
+      padding: 24px 16px 60px;
+    }
+
+    h1 {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      color: #111;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 20px 24px;
+      margin-bottom: 16px;
+      max-width: 760px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .card-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .card-title .chevron { transition: transform 0.2s; display: inline-block; }
+    .card-title.collapsed .chevron { transform: rotate(-90deg); }
+    .card-body.hidden { display: none; }
+
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 20px; }
+    .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px 20px; }
+
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      color: #6b7280;
+      margin-bottom: 4px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 14px;
+      color: #1a1a1a;
+      background: #fff;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    input:focus, select:focus { border-color: #3b82f6; }
+
+    .row { display: flex; gap: 12px; align-items: flex-end; }
+    .row .field { flex: 1; }
+
+    button {
+      cursor: pointer;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 8px 14px;
+      transition: background 0.15s, opacity 0.15s;
+    }
+
+    .btn-primary {
+      background: #1a1a1a;
+      color: #fff;
+    }
+    .btn-primary:hover { background: #333; }
+
+    .btn-secondary {
+      background: #f3f4f6;
+      color: #374151;
+    }
+    .btn-secondary:hover { background: #e5e7eb; }
+
+    .btn-danger {
+      background: transparent;
+      color: #ef4444;
+      font-size: 18px;
+      padding: 4px 8px;
+      line-height: 1;
+    }
+    .btn-danger:hover { background: #fee2e2; }
+
+    .items-table { width: 100%; border-collapse: collapse; }
+    .items-table th {
+      font-size: 11px;
+      font-weight: 600;
+      color: #6b7280;
+      text-align: left;
+      padding: 0 6px 8px 0;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .items-table th.right, .items-table td.right { text-align: right; padding-right: 0; }
+    .items-table td { padding: 8px 6px 0 0; vertical-align: top; }
+
+    .items-table input {
+      padding: 6px 8px;
+      font-size: 13px;
+    }
+
+    .totals {
+      margin-top: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+    }
+
+    .totals-row {
+      display: flex;
+      gap: 20px;
+      font-size: 13px;
+    }
+
+    .totals-row .tl { color: #6b7280; width: 130px; text-align: right; }
+    .totals-row .tv { width: 110px; text-align: right; font-variant-numeric: tabular-nums; }
+    .totals-row.bold .tl, .totals-row.bold .tv { font-weight: 600; }
+    .totals-divider { width: 260px; height: 1px; background: #e5e7eb; margin: 4px 0; }
+
+    .generate-wrap {
+      max-width: 760px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .btn-generate {
+      background: #2563eb;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 600;
+      padding: 12px 28px;
+      border-radius: 8px;
+    }
+    .btn-generate:hover { background: #1d4ed8; }
+
+    /* Modal */
+    .modal-backdrop {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      background: #fff;
+      border-radius: 12px;
+      padding: 24px;
+      width: 420px;
+      max-width: 90vw;
+    }
+    .modal h2 { font-size: 16px; margin-bottom: 16px; }
+    .modal .field { margin-bottom: 12px; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+
+    .notice {
+      font-size: 12px;
+      color: #6b7280;
+      margin-top: 6px;
+    }
+
+    #history-table td { padding: 10px 6px 0 0; font-size: 13px; vertical-align: middle; }
+    #history-table th { padding-bottom: 10px; }
+    .btn-load { background: #f0fdf4; color: #166534; border: 1px solid #86efac; font-size: 12px; padding: 5px 10px; }
+    .btn-load:hover { background: #dcfce7; }
+    .btn-redownload { background: #eff6ff; color: #1e40af; border: 1px solid #93c5fd; font-size: 12px; padding: 5px 10px; }
+    .btn-redownload:hover { background: #dbeafe; }
+  </style>
+  <script type="module" crossorigin src="/invoice-service/assets/index-vnqOIgBK.js"></script>
+</head>
+<body>
+  <div style="max-width:760px;margin:0 auto 20px;display:flex;align-items:center;justify-content:space-between;">
+    <h1 style="margin-bottom:0;">Rechnungsgenerator</h1>
+    <button id="global-save-btn" disabled style="
+      padding:8px 18px;font-size:13px;font-weight:600;border:none;border-radius:6px;cursor:not-allowed;
+      background:#e5e7eb;color:#9ca3af;transition:background 0.15s,color 0.15s;
+    ">Einstellungen speichern</button>
+  </div>
+
+  <!-- Sender Settings -->
+  <div class="card">
+    <div class="card-title collapsed" id="sender-toggle">
+      <span class="chevron">▾</span> Absender-Einstellungen
+    </div>
+    <div class="card-body hidden" id="sender-body">
+      <div class="grid2" style="margin-bottom:12px;">
+        <div class="field"><label>Name</label><input id="s-name" type="text" placeholder="Marc Serafin" /></div>
+        <div class="field"><label>Steuer-ID / NIF</label><input id="s-nif" type="text" placeholder="PT987653452" /></div>
+        <div class="field"><label>Straße</label><input id="s-street" type="text" placeholder="Rua testo testo 123" /></div>
+        <div class="field"><label>PLZ + Stadt</label><input id="s-postalcity" type="text" placeholder="1200-123 Lisboa" /></div>
+        <div class="field"><label>Land</label><input id="s-country" type="text" placeholder="Portugal" /></div>
+      </div>
+      <div class="grid2" style="margin-bottom:16px;">
+        <div class="field"><label>IBAN</label><input id="s-iban" type="text" placeholder="DE13 4513 423..." /></div>
+        <div class="field"><label>SWIFT / BIC</label><input id="s-swift" type="text" placeholder="ASDFXXX" /></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Invoice Form -->
+  <div class="card">
+    <div class="card-title" style="cursor:default;">
+      <span>Rechnungsdetails</span>
+    </div>
+
+    <div class="row" style="margin-bottom:14px;">
+      <div class="field">
+        <label>Kunde</label>
+        <select id="customer-select"></select>
+      </div>
+      <button class="btn-secondary" id="add-customer-btn" style="white-space:nowrap;height:36px;">+ Neuer Kunde</button>
+    </div>
+
+    <div class="grid3" style="margin-bottom:14px;">
+      <div class="field">
+        <label>Leistungsmonat</label>
+        <select id="service-month">
+          <option value="1">Januar</option>
+          <option value="2">Februar</option>
+          <option value="3">März</option>
+          <option value="4">April</option>
+          <option value="5">Mai</option>
+          <option value="6">Juni</option>
+          <option value="7">Juli</option>
+          <option value="8">August</option>
+          <option value="9">September</option>
+          <option value="10">Oktober</option>
+          <option value="11">November</option>
+          <option value="12">Dezember</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Jahr</label>
+        <input id="service-year" type="number" min="2020" max="2099" value="2026" />
+      </div>
+      <div class="field">
+        <label>Rechnungsdatum</label>
+        <input id="invoice-date" type="date" />
+      </div>
+    </div>
+
+    <div class="row" style="margin-bottom:14px;">
+      <div class="field">
+        <label>Leistungsbezeichnung (für Titel)</label>
+        <input id="service-desc" type="text" placeholder="z.B. API Programmierung" />
+      </div>
+      <div class="field" style="max-width:220px;">
+        <label>Rechnungsnummer</label>
+        <input id="invoice-number" type="text" placeholder="2026-CUST-001" />
+      </div>
+    </div>
+  </div>
+
+  <!-- Line Items -->
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <div class="card-title" style="cursor:default;margin-bottom:0;">Positionen</div>
+      <button class="btn-secondary" id="add-item-btn">+ Position hinzufügen</button>
+    </div>
+
+    <table class="items-table">
+      <thead>
+        <tr>
+          <th style="width:32px;">#</th>
+          <th>Beschreibung</th>
+          <th class="right" style="width:72px;">Anzahl</th>
+          <th class="right" style="width:100px;">Einzelpreis (€)</th>
+          <th class="right" style="width:110px;">Summe netto</th>
+          <th style="width:36px;"></th>
+        </tr>
+      </thead>
+      <tbody id="items-body"></tbody>
+    </table>
+
+    <div class="totals">
+      <div class="totals-row"><span class="tl">Summe netto</span><span class="tv" id="t-net">0,00 €</span></div>
+      <div class="totals-row"><span class="tl">USt. 0%</span><span class="tv">0,00 €</span></div>
+      <div class="totals-divider"></div>
+      <div class="totals-row bold"><span class="tl">Rechnungssumme</span><span class="tv" id="t-gross">0,00 €</span></div>
+    </div>
+  </div>
+
+  <div class="generate-wrap" style="gap:12px;">
+    <button class="btn-secondary" id="new-invoice-btn" style="padding:12px 20px;font-size:14px;" title="Aktuelle Rechnung abschließen und nächste Nummer laden">+ Neue Rechnung</button>
+    <button class="btn-generate" id="generate-btn">PDF generieren &amp; herunterladen</button>
+  </div>
+
+  <!-- Email Template -->
+  <div class="card" style="margin-top:24px;max-width:760px;margin-left:auto;margin-right:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <div class="card-title" style="cursor:default;margin-bottom:0;">E-Mail Vorlage</div>
+      <button class="btn-secondary" id="copy-email-btn" style="white-space:nowrap;">Kopieren</button>
+    </div>
+    <div class="field" style="margin-bottom:10px;">
+      <label>Betreff</label>
+      <input id="email-subject" type="text" placeholder="Rechnung [Monat] [Jahr] – [Kunde]" />
+    </div>
+    <textarea id="email-template"
+      rows="10"
+      style="width:100%;font-family:'Verdana',sans-serif;font-size:13px;line-height:1.6;padding:12px;border:1px solid #d1d5db;border-radius:6px;resize:vertical;color:#1a1a1a;outline:none;"
+    ></textarea>
+  </div>
+
+  <!-- Sync & Backup -->
+  <div class="card" style="margin-top:24px;max-width:760px;margin-left:auto;margin-right:auto;">
+    <div class="card-title collapsed" id="sync-toggle">
+      <span class="chevron">▾</span> Sync &amp; Backup
+    </div>
+    <div class="card-body hidden" id="sync-body">
+      <div style="margin-bottom:8px;font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">
+        GitHub Gist Sync <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#9ca3af;">— alle Daten geräteübergreifend synchronisieren</span>
+      </div>
+      <div class="grid2" style="margin-bottom:10px;">
+        <div class="field">
+          <label>GitHub Personal Access Token <a href="https://github.com/settings/tokens/new?scopes=gist&description=InvoiceGenerator" target="_blank" style="font-size:11px;color:#3b82f6;">(erstellen)</a></label>
+          <input id="sync-pat" type="password" placeholder="ghp_xxxxxxxxxxxx" autocomplete="off" />
+        </div>
+        <div class="field">
+          <label>Gist ID <span style="font-weight:400;color:#9ca3af;">(leer lassen → Neu erstellen)</span></label>
+          <input id="sync-gist-id" type="text" placeholder="abc123..." />
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:20px;">
+        <button class="btn-secondary" id="sync-save-btn">Sync-Einstellungen speichern</button>
+        <button class="btn-secondary" id="sync-pull-btn">⬇ Aus Gist laden</button>
+        <button class="btn-secondary" id="sync-push-btn">⬆ In Gist speichern</button>
+        <span id="sync-status" class="notice"></span>
+      </div>
+      <div style="margin-bottom:8px;font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">Backup</div>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <button class="btn-secondary" id="export-btn">⬇ Daten exportieren (JSON)</button>
+        <label class="btn-secondary" style="cursor:pointer;margin:0;">⬆ Daten importieren
+          <input id="import-input" type="file" accept=".json" style="display:none;" />
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Past Invoices -->
+  <div class="card" id="history-card" style="margin-top:24px;max-width:760px;margin-left:auto;margin-right:auto;">
+    <div class="card-title collapsed" id="history-toggle">
+      <span class="chevron">▾</span> Vergangene Rechnungen
+    </div>
+    <div class="card-body hidden" id="history-body">
+      <table class="items-table" id="history-table">
+        <thead>
+          <tr>
+            <th>Rechnungsnummer</th>
+            <th>Kunde</th>
+            <th>Datum</th>
+            <th>Zeitraum</th>
+            <th class="right">Summe</th>
+            <th style="width:160px;"></th>
+          </tr>
+        </thead>
+        <tbody id="history-body-rows"></tbody>
+      </table>
+      <p id="history-empty" style="color:#6b7280;font-size:13px;margin-top:8px;display:none;">Noch keine Rechnungen generiert.</p>
+    </div>
+  </div>
+
+  <!-- New Customer Modal -->
+  <div class="modal-backdrop" id="customer-modal">
+    <div class="modal">
+      <h2>Neuer Kunde</h2>
+      <div class="field"><label>Kürzel (z.B. CUST)</label><input id="c-code" type="text" placeholder="CUST" /></div>
+      <div class="field"><label>Firmenname</label><input id="c-name" type="text" /></div>
+      <div class="field"><label>USt-IdNr. / VAT ID</label><input id="c-vatid" type="text" placeholder="DE123456789" /></div>
+      <div class="field"><label>Straße</label><input id="c-street" type="text" /></div>
+      <div class="field"><label>PLZ + Stadt</label><input id="c-postalcity" type="text" placeholder="12345 Berlin" /></div>
+      <div class="field"><label>Land</label><input id="c-country" type="text" placeholder="Deutschland" /></div>
+      <div class="modal-actions">
+        <button class="btn-secondary" id="cancel-customer-btn">Abbrechen</button>
+        <button class="btn-primary" id="save-customer-btn">Kunde speichern</button>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
