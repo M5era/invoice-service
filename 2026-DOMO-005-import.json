@@ -1,0 +1,63 @@
+{
+  "sender": {
+    "name": "Marc Serafin",
+    "nif": "PT313500690",
+    "street": "Rua do Olival 144, 2 andar",
+    "postalCity": "1200-743 Lisboa",
+    "country": "Portugal",
+    "iban": "DE93100110012285575772",
+    "swift": "NTSBDEB1XXX"
+  },
+  "customers": [
+    {
+      "code": "DOMO",
+      "name": "Domoforce GmbH",
+      "vatId": "DE315987867",
+      "street": "Zollstockgürtel 57 – 67",
+      "postalCity": "50969 Köln",
+      "country": "Deutschland",
+      "lastInvoiceSeq": 5
+    }
+  ],
+  "lastUsed": {
+    "customerCode": "DOMO",
+    "serviceMonth": 4,
+    "serviceYear": 2026,
+    "serviceDescription": "",
+    "invoiceDate": "2026-05-05",
+    "items": [
+      { "description": "Arbeitstage API Programmierung: Domopay", "qty": 7, "unitPrice": 760 },
+      { "description": "Arbeitstage API Programmierung: Datex x DocuWare Integration", "qty": 1, "unitPrice": 760 }
+    ]
+  },
+  "history": [
+    {
+      "invoiceNumber": "2026-DOMO-005",
+      "invoiceDate": "2026-05-05",
+      "generatedAt": "2026-05-05T00:00:00.000Z",
+      "customerCode": "DOMO",
+      "customerName": "Domoforce GmbH",
+      "customerVatId": "DE315987867",
+      "customerStreet": "Zollstockgürtel 57 – 67",
+      "customerPostalCity": "50969 Köln",
+      "customerCountry": "Deutschland",
+      "senderName": "Marc Serafin",
+      "senderNif": "PT313500690",
+      "senderStreet": "Rua do Olival 144, 2 andar",
+      "senderPostalCity": "1200-743 Lisboa",
+      "senderCountry": "Portugal",
+      "senderIban": "DE93100110012285575772",
+      "senderSwift": "NTSBDEB1XXX",
+      "serviceMonth": 4,
+      "serviceYear": 2026,
+      "serviceDescription": "",
+      "items": [
+        { "description": "Arbeitstage API Programmierung: Domopay", "qty": 7, "unitPrice": 760 },
+        { "description": "Arbeitstage API Programmierung: Datex x DocuWare Integration", "qty": 1, "unitPrice": 760 }
+      ],
+      "total": 6080
+    }
+  ],
+  "emailSubject": "Rechnung 2026-DOMO-005",
+  "emailTemplate": "Hi [Name],\n\nIch hoffe dir geht es gut.\n\nAnbei findest du die Rechnung für den letzten Monat. Bei Fragen kannst du dich selbstverständlich jederzeit an mich melden.\n\nBeste Grüße,\n"
+}

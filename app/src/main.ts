@@ -63,12 +63,13 @@ const itemsBody = document.getElementById('items-body')!;
 const tNet = document.getElementById('t-net')!;
 const tGross = document.getElementById('t-gross')!;
 
-const generateBtn = document.getElementById('generate-btn')!;
+const generateBtn = document.getElementById('generate-btn') as HTMLButtonElement;
 const newInvoiceBtn = document.getElementById('new-invoice-btn')!;
 
 const emailSubjectEl = document.getElementById('email-subject') as HTMLInputElement;
 const emailTemplateEl = document.getElementById('email-template') as HTMLTextAreaElement;
 const copyEmailBtn = document.getElementById('copy-email-btn')!;
+const mailOpenBtn = document.getElementById('mail-open-btn')!;
 
 const syncToggle = document.getElementById('sync-toggle')!;
 const syncBody = document.getElementById('sync-body')!;
@@ -153,8 +154,6 @@ function refreshInvoiceNumber() {
 }
 
 // ── Email subject ──────────────────────────────────────────────────────────────
-const MONTH_NAMES = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
-
 function refreshEmailSubject() {
   const num = invoiceNumber.value.trim();
   emailSubjectEl.value = num ? `Rechnung ${num}` : 'Rechnung';
@@ -252,7 +251,7 @@ function renderHistory() {
 
   history.forEach(record => {
     const tr = document.createElement('tr');
-    const monthNames = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+    const monthNames = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
     const period = `${monthNames[record.serviceMonth - 1]} ${record.serviceYear}`;
 
     tr.innerHTML = `
@@ -387,6 +386,12 @@ copyEmailBtn.addEventListener('click', () => {
     copyEmailBtn.textContent = '✓ Kopiert';
     setTimeout(() => { copyEmailBtn.textContent = 'Kopieren'; }, 2000);
   });
+});
+
+mailOpenBtn.addEventListener('click', () => {
+  const subject = emailSubjectEl.value.trim();
+  const body = emailTemplateEl.value;
+  window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 });
 
 customerSelect.addEventListener('change', () => { refreshInvoiceNumber(); refreshEmailSubject(); markDirty(); });
@@ -533,13 +538,15 @@ function setSyncStatus(msg: string, isError = false) {
 function applyLoadedData(raw: string): boolean {
   try {
     const parsed = JSON.parse(raw) as Partial<AppData>;
+    // ✅ KORREKTUR: Holt saubere Default-Daten und wendet die geladenen Werte drauf an
+    const base = loadData();
     data = {
-      sender: { ...data.sender, ...parsed.sender },
-      customers: parsed.customers ?? data.customers,
-      lastUsed: { ...data.lastUsed, ...parsed.lastUsed },
-      history: parsed.history ?? data.history,
-      emailSubject: parsed.emailSubject ?? data.emailSubject,
-      emailTemplate: parsed.emailTemplate ?? data.emailTemplate,
+      sender: { ...base.sender, ...parsed.sender },
+      customers: parsed.customers ?? base.customers,
+      lastUsed: { ...base.lastUsed, ...parsed.lastUsed },
+      history: parsed.history ?? base.history,
+      emailSubject: parsed.emailSubject ?? base.emailSubject,
+      emailTemplate: parsed.emailTemplate ?? base.emailTemplate,
     };
     saveData(data);
     init();
@@ -558,6 +565,7 @@ async function autoSyncToGist() {
 syncSaveBtn.addEventListener('click', async () => {
   const pat = syncPatInput.value.trim();
   let gistId = syncGistIdInput.value.trim();
+  const hadExistingGist = !!gistId;
 
   if (!pat) { setSyncStatus('Bitte PAT eingeben.', true); return; }
 
@@ -567,16 +575,27 @@ syncSaveBtn.addEventListener('click', async () => {
     if (!newId) { setSyncStatus('Fehler beim Erstellen des Gists. PAT korrekt?', true); return; }
     gistId = newId;
     syncGistIdInput.value = gistId;
-    setSyncStatus(`✓ Neuer Gist erstellt: ${gistId}`);
   }
 
   const config: SyncConfig = { pat, gistId };
   saveSyncConfig(config);
   syncConfig = config;
-  setSyncStatus('✓ Sync-Einstellungen gespeichert.');
 
-  // Push current data immediately
-  await pushGist(syncConfig, JSON.stringify(data));
+  if (!hadExistingGist) {
+    // New Gist just created — push current data into it
+    await pushGist(syncConfig, JSON.stringify(data));
+    setSyncStatus('✓ Gist erstellt und Daten hochgeladen.');
+  } else {
+    // Existing Gist ID entered — pull data from it (don't overwrite)
+    setSyncStatus('Lade Daten aus Gist…');
+    const raw = await fetchGist(syncConfig);
+    if (raw) {
+      applyLoadedData(raw);
+      setSyncStatus('✓ Sync eingerichtet und Daten geladen.');
+    } else {
+      setSyncStatus('Einstellungen gespeichert, Gist konnte nicht geladen werden.', true);
+    }
+  }
 });
 
 syncPullBtn.addEventListener('click', async () => {

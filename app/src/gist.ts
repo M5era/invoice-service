@@ -37,7 +37,18 @@ export async function fetchGist(config: SyncConfig): Promise<string | null> {
     });
     if (!res.ok) return null;
     const body = await res.json() as { files?: Record<string, { content?: string }> };
-    return body.files?.[GIST_FILE]?.content ?? null;
+
+    // ✅ FIX: Github sometimes returns files with exact same name but different casing or as first file
+    const files = Object.values(body.files ?? {});
+    if (files.length === 0) return null;
+
+    // Suche zuerst nach genauem Namen, ansonsten nimm die erste JSON Datei
+    const exact = body.files?.[GIST_FILE];
+    if (exact?.content) return exact.content;
+
+    // Fallback: nimm die erste Datei die wie invoice-data aussieht
+    const fallback = files.find(f => f.filename?.includes('invoice') && f.filename?.endsWith('.json'));
+    return fallback?.content ?? null;
   } catch {
     return null;
   }
